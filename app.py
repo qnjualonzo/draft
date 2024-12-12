@@ -1,13 +1,9 @@
 import streamlit as st
 from transformers import pipeline
 import re
-import torch
-
-# Check if GPU is available
-device = 0 if torch.cuda.is_available() else -1  # 0 for GPU, -1 for CPU
 
 # Load the translation pipeline (English to French)
-translation_pipeline = pipeline("translation", model="Helsinki-NLP/opus-mt-en-fr", device=device)
+translation_pipeline = pipeline("translation", model="Helsinki-NLP/opus-mt-en-fr")
 
 # Function to add spaces between sentences
 def add_spaces_between_sentences(text):
