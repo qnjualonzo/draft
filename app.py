@@ -2,8 +2,8 @@ import streamlit as st
 from transformers import pipeline
 import re
 
-# Load the translation pipeline (English to French)
-translation_pipeline = pipeline("translation", model="Helsinki-NLP/opus-mt-en-fr")
+# Load the translation pipeline (English to Spanish) and specify PyTorch framework
+translation_pipeline = pipeline("translation", model="Helsinki-NLP/opus-mt-en-es", framework="pt")
 
 # Function to add spaces between sentences
 def add_spaces_between_sentences(text):
@@ -15,7 +15,7 @@ if "translated_text" not in st.session_state:
     st.session_state.translated_text = ""
 
 if "lang_direction" not in st.session_state:
-    st.session_state.lang_direction = "EN to FR"
+    st.session_state.lang_direction = "EN to ES"
 if "input_text" not in st.session_state:
     st.session_state.input_text = ""
 
@@ -65,16 +65,7 @@ st.markdown(
 
 # Streamlit Title
 st.markdown('<div class="title">Deep Learning Translation</div>', unsafe_allow_html=True)
-st.markdown('<div class="subheader">Translate text between English and French using a transformer model</div>', unsafe_allow_html=True)
-
-# Language Direction
-lang_direction = st.sidebar.radio("Select Translation Direction", ["EN to FR", "FR to EN"])
-
-# Reset session state when language direction changes
-if lang_direction != st.session_state.lang_direction:
-    st.session_state.lang_direction = lang_direction
-    st.session_state.input_text = ""
-    st.session_state.translated_text = ""
+st.markdown('<div class="subheader">Translate text between English and Spanish using a transformer model</div>', unsafe_allow_html=True)
 
 # Input Text Area for entering text
 st.session_state.input_text = st.text_area("Enter text to translate:", value=st.session_state.input_text, height=200)
@@ -89,4 +80,4 @@ if st.button("Translate"):
 
 # Show Translated Text
 if st.session_state.translated_text:
-    st.text_area("Translated Text:", value=st.session_state.translated_text, height=200, disabled=True)
+    st.text_area("Translated Text (Spanish):", value=st.session_state.translated_text, height=200, disabled=True)
