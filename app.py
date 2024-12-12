@@ -1,74 +1,73 @@
 import streamlit as st
 from transformers import pipeline
+from transformers import BertTokenizer, BertForSequenceClassification
+from transformers import pipeline as summarizer_pipeline
 import re
 
-# Load Hugging Face models for translation and summarization
-translation_pipeline = pipeline("translation", model="Helsinki-NLP/opus-mt-en-ko")  # English to Korean translation
-summarization_pipeline = pipeline("summarization", model="facebook/bart-large-cnn")  # Summarization model
+# Load the translation pipeline (English to French)
+translation_pipeline = pipeline("translation", model="Helsinki-NLP/opus-mt-en-fr")
 
+# Load summarization pipeline
+summarizer = summarizer_pipeline("summarization")
+
+# Function to add spaces between sentences
+def add_spaces_between_sentences(text):
+    text = re.sub(r'([.!?])(?=\S)', r'\1 ', text)
+    return text
+
+# Initialize session state variables
 if "translated_text" not in st.session_state:
     st.session_state.translated_text = ""
 if "summarized_text" not in st.session_state:
     st.session_state.summarized_text = ""
 
-def add_spaces_between_sentences(text):
-    text = re.sub(r'([.!?])(?=\S)', r'\1 ', text)
-    return text
-
-def translate_text_huggingface(input_text, src_lang, tgt_lang):
-    try:
-        # For simplicity, this uses the translation model from English to Korean or vice versa
-        if src_lang == "en" and tgt_lang == "ko":
-            translated = translation_pipeline(input_text, max_length=512)
-        elif src_lang == "ko" and tgt_lang == "en":
-            translated = translation_pipeline(input_text, max_length=512)
-        else:
-            raise ValueError("Unsupported translation direction")
-        return translated[0]['translation_text']
-    except Exception as e:
-        st.error(f"Error during translation: {e}")
-        return ""
-
-def summarize_with_huggingface(text, num_sentences=3):
-    try:
-        summary = summarization_pipeline(text, max_length=150, min_length=50, do_sample=False)
-        return summary[0]['summary_text']
-    except Exception as e:
-        st.error(f"Error during summarization: {e}")
-        return ""
-
-st.title("EnKoreS")
-
 if "lang_direction" not in st.session_state:
-    st.session_state.lang_direction = "EN to KO"
+    st.session_state.lang_direction = "EN to FR"
 if "input_text" not in st.session_state:
     st.session_state.input_text = ""
 
-lang_direction = st.sidebar.radio("Select Translation Direction", ["EN to KO", "KO to EN"])
+# Streamlit Title
+st.title("Translation and Summarization")
 
+# Language Direction
+lang_direction = st.sidebar.radio("Select Translation Direction", ["EN to FR", "FR to EN"])
+
+# Reset session state when language direction changes
 if lang_direction != st.session_state.lang_direction:
     st.session_state.lang_direction = lang_direction
     st.session_state.input_text = ""
     st.session_state.translated_text = ""
     st.session_state.summarized_text = ""
 
+# Input Text Area for entering text
 st.session_state.input_text = st.text_area("Enter text to translate:", value=st.session_state.input_text)
 
+# Translation button
 if st.button("Translate"):
     if st.session_state.input_text.strip():
-        src_lang = "en" if st.session_state.lang_direction == "EN to KO" else "ko"
-        tgt_lang = "ko" if st.session_state.lang_direction == "EN to KO" else "en"
-        st.session_state.translated_text = translate_text_huggingface(st.session_state.input_text, src_lang, tgt_lang)
+        # Set source and target languages based on user selection
+        src_lang = "en" if st.session_state.lang_direction == "EN to FR" else "fr"
+        tgt_lang = "fr" if st.session_state.lang_direction == "EN to FR" else "en"
+        
+        # Perform translation
+        translated_result = translation_pipeline(st.session_state.input_text)
+        st.session_state.translated_text = translated_result[0]['translation_text']
         st.session_state.translated_text = add_spaces_between_sentences(st.session_state.translated_text)
         st.session_state.summarized_text = ""
 
+# Show Translated Text
 if st.session_state.translated_text:
     st.text_area("Translated Text:", value=st.session_state.translated_text, height=150, disabled=True)
 
+    # Summarize the translated text
     if st.button("Summarize"):
         if st.session_state.translated_text.strip():
             processed_text = add_spaces_between_sentences(st.session_state.translated_text)
-            st.session_state.summarized_text = summarize_with_huggingface(processed_text)
 
+            # Perform summarization
+            summarized_result = summarizer(processed_text, max_length=150, min_length=50, do_sample=False)
+            st.session_state.summarized_text = summarized_result[0]['summary_text']
+
+# Show Summarized Text
 if st.session_state.summarized_text:
     st.text_area("Summarized Text:", value=st.session_state.summarized_text, height=150, disabled=True)
